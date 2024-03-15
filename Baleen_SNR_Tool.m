@@ -116,38 +116,27 @@ for p = 1:length(PAMLAB_ANNOTATIONS)%read in in Pamlab csv (Loop) Possibly redun
         elseif wavpaths == 0
            temp = PLA.filename(w);    
         end
-        if isempty(x)||~strcmp(temp, FileName) %check if first time running or if need to load new wav files
-           FileName = temp;
-        for i = 1:length(WAVFILES.name)
-            if contains(WAVFILES.name(i), FileName)
-               PATH2WAV = char(fullfile(WAVFILES.folder(i),WAVFILES.name(i)));
-               continue
-            end
-        end
         
-
-        temp = PLA.filename(w);
-            
-        if isempty(x)||~strcmp(temp, FileName) %check if first time running
-           FileName = temp;
-           for i = 1:length(WAVFILES.name)
+        if isempty(x)||~strcmp(temp, FileName) %check if first time running or if need to load new wav files
+            FileName = temp;
+            for i = 1:length(WAVFILES.name)
                 if contains(WAVFILES.name(i), FileName)
-                   PATH2WAV = char(fullfile(WAVFILES.folder(i),WAVFILES.name(i)));
-                   continue
+                    PATH2WAV = char(fullfile(WAVFILES.folder(i),WAVFILES.name(i)));
+                    continue
                 end
-           end
-           if ~exist('PATH2WAV','var')
-              disp("File not found in directory") 
-              return
-           end
-           [x,Fs] = audioread(PATH2WAV);
-           [M,q] = size(x); %get size length of audio
-           dt = 1/Fs;      %time between samples in seconds
-           t = dt*(0:M-1)';%get time index in seconds
-           xt = [x t];       
-      %%% create bandpass filter object if it doesn't exist already
-           if isempty(bandpass_filter) || Fs ~= bandpass_filter.SampleRate
-              bandpass_filter = designfilt(...
+            end
+            if ~exist('PATH2WAV','var')
+                disp("File not found in directory") 
+                return
+            end
+            [x,Fs] = audioread(PATH2WAV);
+            [M,q] = size(x); %get size length of audio
+            dt = 1/Fs;      %time between samples in seconds
+            t = dt*(0:M-1)';%get time index in seconds
+            xt = [x t];       
+            %%% create bandpass filter object if it doesn't exist already
+            if isempty(bandpass_filter) || Fs ~= bandpass_filter.SampleRate
+                bandpass_filter = designfilt(...
                     'bandpassfir',...
                     'StopbandFrequency1', SNR_PARAMS_filtered.LowerStopbandFrequency,...
                     'PassbandFrequency1', SNR_PARAMS_filtered.LowerPassbandFrequency,...
@@ -159,8 +148,8 @@ for p = 1:length(PAMLAB_ANNOTATIONS)%read in in Pamlab csv (Loop) Possibly redun
                     'DesignMethod', 'kaiserwin',...
                     'SampleRate', Fs...
                     );
-           end    
-       end
+            end    
+        end
 
         %%% Get Start90 and End90 RelativeStartTime
         %%% Transform Start90 and End90 with RelativeStartTime
