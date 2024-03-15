@@ -15,6 +15,7 @@ close all
 %Get list of Pamlab Output csv
 PATH2INPUT = uigetdir('','SELECT FOLDER WITH ANNOTATIONS INPUT');
 PAMLAB_ANNOTATIONS = dir(fullfile(PATH2INPUT, '\*.csv'));
+
 %Switch to decide user define path to wav or input defined
 answer = questdlg('Would you like to obtain path to .wav files from annotations input?', ...
 	'Define .WAV path', ...
@@ -109,21 +110,22 @@ for p = 1:length(PAMLAB_ANNOTATIONS)%read in in Pamlab csv (Loop) Possibly redun
         
         %%% process 
         if wavpaths == 1
-            
+           temp = PLA.filename(w);
+           temppath = split(PLA.filepath(w),'\');
+           PATH2DATA = temppath(1:end-1);
         elseif wavpaths == 0
-            temp = PLA.filename(w);    
-            
-            if isempty(x)||~strcmp(temp, FileName) %check if first time running or if need to load new wav files
-                FileName = temp;
-            for i = 1:length(WAVFILES.name)
-                if contains(WAVFILES.name(i), FileName)
-                   PATH2WAV = char(fullfile(WAVFILES.folder(i),WAVFILES.name(i)));
-                   continue
-                end
+           temp = PLA.filename(w);    
+        end
+        if isempty(x)||~strcmp(temp, FileName) %check if first time running or if need to load new wav files
+           FileName = temp;
+        for i = 1:length(WAVFILES.name)
+            if contains(WAVFILES.name(i), FileName)
+               PATH2WAV = char(fullfile(WAVFILES.folder(i),WAVFILES.name(i)));
+               continue
             end
+        end
         
-           [x,Fs] = audioread(PATH2WAV);
-            end
+        [x,Fs] = audioread(PATH2WAV);
         end
         [M,q] = size(x); %get size length of audio
         dt = 1/Fs;      %time between samples in seconds
@@ -145,11 +147,11 @@ for p = 1:length(PAMLAB_ANNOTATIONS)%read in in Pamlab csv (Loop) Possibly redun
                  );
         end    
   
-       %%% Get Start90 and End90 RelativeStartTime
-       %%% Transform Start90 and End90 with RelativeStartTime
+        %%% Get Start90 and End90 RelativeStartTime
+        %%% Transform Start90 and End90 with RelativeStartTime
 
-       RelativeStartTime = PLA.RelativeStartTime(w);
-       if ~isa(RelativeStartTime,'double')
+        RelativeStartTime = PLA.RelativeStartTime(w);
+        if ~isa(RelativeStartTime,'double')
              RelativeStartTime = str2double(PLA.RelativeStartTime(w));
         end
 
