@@ -125,44 +125,60 @@ for p = 1:length(PAMLAB_ANNOTATIONS)%read in in Pamlab csv (Loop) Possibly redun
             end
         end
         
-        [x,Fs] = audioread(PATH2WAV);
-        end
-        [M,q] = size(x); %get size length of audio
-        dt = 1/Fs;      %time between samples in seconds
-        t = dt*(0:M-1)';%get time index in seconds
-        xt = [x t];       
-        %%% create bandpass filter object if it doesn't exist already
-        if isempty(bandpass_filter) || Fs ~= bandpass_filter.SampleRate
-            bandpass_filter = designfilt(...
-                 'bandpassfir',...
-                 'StopbandFrequency1', SNR_PARAMS_filtered.LowerStopbandFrequency,...
-                 'PassbandFrequency1', SNR_PARAMS_filtered.LowerPassbandFrequency,...
-                 'PassbandFrequency2', SNR_PARAMS_filtered.UpperPassbandFrequency,...
-                 'StopbandFrequency2', SNR_PARAMS_filtered.UpperStopbandFrequency,...
-                 'StopbandAttenuation1', 60,...
-                 'StopbandAttenuation2', 60,...
-                 'PassbandRipple', 1,...
-                 'DesignMethod', 'kaiserwin',...
-                 'SampleRate', Fs...
-                 );
-        end    
-  
+
+        temp = PLA.filename(w);
+            
+        if isempty(x)||~strcmp(temp, FileName) %check if first time running
+           FileName = temp;
+           for i = 1:length(WAVFILES.name)
+                if contains(WAVFILES.name(i), FileName)
+                   PATH2WAV = char(fullfile(WAVFILES.folder(i),WAVFILES.name(i)));
+                   continue
+                end
+           end
+           if ~exist('PATH2WAV','var')
+              disp("File not found in directory") 
+              return
+           end
+           [x,Fs] = audioread(PATH2WAV);
+           [M,q] = size(x); %get size length of audio
+           dt = 1/Fs;      %time between samples in seconds
+           t = dt*(0:M-1)';%get time index in seconds
+           xt = [x t];       
+      %%% create bandpass filter object if it doesn't exist already
+           if isempty(bandpass_filter) || Fs ~= bandpass_filter.SampleRate
+              bandpass_filter = designfilt(...
+                    'bandpassfir',...
+                    'StopbandFrequency1', SNR_PARAMS_filtered.LowerStopbandFrequency,...
+                    'PassbandFrequency1', SNR_PARAMS_filtered.LowerPassbandFrequency,...
+                    'PassbandFrequency2', SNR_PARAMS_filtered.UpperPassbandFrequency,...
+                    'StopbandFrequency2', SNR_PARAMS_filtered.UpperStopbandFrequency,...
+                    'StopbandAttenuation1', 60,...
+                    'StopbandAttenuation2', 60,...
+                    'PassbandRipple', 1,...
+                    'DesignMethod', 'kaiserwin',...
+                    'SampleRate', Fs...
+                    );
+           end    
+       end
+
         %%% Get Start90 and End90 RelativeStartTime
         %%% Transform Start90 and End90 with RelativeStartTime
 
-        RelativeStartTime = PLA.RelativeStartTime(w);
+
+       RelativeStartTime = PLA.annotation_relative_start_time_sec(w);
         if ~isa(RelativeStartTime,'double')
-             RelativeStartTime = str2double(PLA.RelativeStartTime(w));
+            RelativeStartTime = str2double(PLA.annotation_relative_start_time_sec(w));
         end
 
-        PLA_StartTime90 = PLA.StartTime90(w);
+        PLA_StartTime90 = PLA.start_time90_s(w);
         if ~isa(PLA_StartTime90,'double')
-            PLA_StartTime90 = str2double(PLA.StartTime90(w));
+            PLA_StartTime90 = str2double(PLA.start_time90_s(w));
         end
 
-        PLA_StopTime90 = PLA.StopTime90(w);
+        PLA_StopTime90 = PLA.stop_time90_s(w);
         if ~isa(PLA_StopTime90,'double')
-            PLA_StopTime90 = str2double(PLA.StopTime90(w));
+            PLA_StopTime90 = str2double(PLA.stop_time90_s(w));
         end
 
         Start90 = PLA_StartTime90 + RelativeStartTime;
