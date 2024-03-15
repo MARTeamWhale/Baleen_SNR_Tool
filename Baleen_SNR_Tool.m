@@ -5,18 +5,32 @@
 %
 % Written by Mike Adams
 % Last updated by Mike Adams
-% 2024-03-14
+% 2024-03-15
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %DEV NOTE: https://www.mathworks.com/help/matlab/ref/listdlg.html
 
 clear
 close all
 
-%Get list of Pamlab Output csv and path to wav files
-PATH2INPUT = uigetdir('','SELECT FOLDER WITH PAMLAB OUTPUT');
+%Get list of Pamlab Output csv
+PATH2INPUT = uigetdir('','SELECT FOLDER WITH ANNOTATIONS INPUT');
 PAMLAB_ANNOTATIONS = dir(fullfile(PATH2INPUT, '\*.csv'));
-PATH2DATA = uigetdir('','SELECT FOLDER WITH WAV FILES');
-WAVFILES = struct2table(dir(fullfile(PATH2DATA, '**\*.wav')));
+%Switch to decide user define path to wav or input defined
+answer = questdlg('Would you like to obtain path to .wav files from annotations input?', ...
+	'Define .WAV path', ...
+	'Yes','No','Yes');
+% Handle response
+switch answer
+    case 'Yes'
+        disp("Obtaining .wav paths from annotations input")
+         wavpaths = 1;
+    case 'No'
+        wavpaths = 0;
+        disp([Please select folder with .wav files])
+        PATH2DATA = uigetdir('','SELECT FOLDER WITH WAV FILES');
+        WAVFILES = struct2table(dir(fullfile(PATH2DATA, '**\*.wav')));
+end
+
 PATH2OUTPUTDIRECTORY = uigetdir('','SELECT DIRECTORY TO CREATE OUTPUT FOLDER');
 
 if PATH2OUTPUTDIRECTORY == 0
@@ -94,38 +108,42 @@ for p = 1:length(PAMLAB_ANNOTATIONS)%read in in Pamlab csv (Loop) Possibly redun
         waitbar(w/num_annotations, waitfig, sprintf('%s\nEstimated time remaining: %s', waitmsg, duration(0,0,t_rem)))
         
         %%% process 
-        
-        temp = split(PLA.filename(w),'.');
-        temp(end) = {'wav'};    
-        if isempty(x)||~strcmp(strjoin(temp, '.'), FileName) %check if first time running
-           FileName = strjoin(temp, '.');
-           for i = 1:length(WAVFILES.name)
+        if wavpaths == 1
+            
+        elseif wavpaths == 0
+            temp = PLA.filename(w);    
+            
+            if isempty(x)||~strcmp(temp, FileName) %check if first time running or if need to load new wav files
+                FileName = temp;
+            for i = 1:length(WAVFILES.name)
                 if contains(WAVFILES.name(i), FileName)
                    PATH2WAV = char(fullfile(WAVFILES.folder(i),WAVFILES.name(i)));
                    continue
                 end
-           end
+            end
+        
            [x,Fs] = audioread(PATH2WAV);
-           [M,q] = size(x); %get size length of audio
-           dt = 1/Fs;      %time between samples in seconds
-           t = dt*(0:M-1)';%get time index in seconds
-           xt = [x t];       
-      %%% create bandpass filter object if it doesn't exist already
-           if isempty(bandpass_filter) || Fs ~= bandpass_filter.SampleRate
-              bandpass_filter = designfilt(...
-                    'bandpassfir',...
-                    'StopbandFrequency1', SNR_PARAMS_filtered.LowerStopbandFrequency,...
-                    'PassbandFrequency1', SNR_PARAMS_filtered.LowerPassbandFrequency,...
-                    'PassbandFrequency2', SNR_PARAMS_filtered.UpperPassbandFrequency,...
-                    'StopbandFrequency2', SNR_PARAMS_filtered.UpperStopbandFrequency,...
-                    'StopbandAttenuation1', 60,...
-                    'StopbandAttenuation2', 60,...
-                    'PassbandRipple', 1,...
-                    'DesignMethod', 'kaiserwin',...
-                    'SampleRate', Fs...
-                    );
-           end    
-       end
+            end
+        end
+        [M,q] = size(x); %get size length of audio
+        dt = 1/Fs;      %time between samples in seconds
+        t = dt*(0:M-1)';%get time index in seconds
+        xt = [x t];       
+        %%% create bandpass filter object if it doesn't exist already
+        if isempty(bandpass_filter) || Fs ~= bandpass_filter.SampleRate
+            bandpass_filter = designfilt(...
+                 'bandpassfir',...
+                 'StopbandFrequency1', SNR_PARAMS_filtered.LowerStopbandFrequency,...
+                 'PassbandFrequency1', SNR_PARAMS_filtered.LowerPassbandFrequency,...
+                 'PassbandFrequency2', SNR_PARAMS_filtered.UpperPassbandFrequency,...
+                 'StopbandFrequency2', SNR_PARAMS_filtered.UpperStopbandFrequency,...
+                 'StopbandAttenuation1', 60,...
+                 'StopbandAttenuation2', 60,...
+                 'PassbandRipple', 1,...
+                 'DesignMethod', 'kaiserwin',...
+                 'SampleRate', Fs...
+                 );
+        end    
   
        %%% Get Start90 and End90 RelativeStartTime
        %%% Transform Start90 and End90 with RelativeStartTime
